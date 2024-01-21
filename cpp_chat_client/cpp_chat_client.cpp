@@ -1,6 +1,7 @@
 #pragma comment(lib, "ws2_32.lib") // win sock
 #include <winsock2.h> //using 2nd version of winsock
 #include <iostream>
+#include <string>
 
 
 #pragma warning(disable: 4996)
@@ -8,10 +9,14 @@
 SOCKET Connection;
 
 void ClientHandler() {
-	char msg[256];
+	int msg_size;
 	while (true) {
-		recv(Connection, msg, sizeof(msg), NULL);
+		recv(Connection, (char*)&msg_size, sizeof(int), NULL);
+		char* msg = new char[msg_size + 1];
+		msg[msg_size] = '\0';
+		recv(Connection, msg, msg_size, NULL);
 		std::cout << msg << std::endl;
+		delete[] msg;
 	}
 	
 }
@@ -41,10 +46,12 @@ int main(int arg, char* argv[]) {  //check if lib loaded
 
 	CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)ClientHandler, NULL, NULL, NULL); // multithreading
 
-	char msg1[256];
+	std::string msg1;
 	while (true) {
-		std::cin.getline(msg1, sizeof(msg1));
-		send(Connection, msg1, sizeof(msg1), NULL);
+		std::getline(std::cin, msg1);
+		int msg_size = msg1.size();
+		send(Connection, (char*)&msg_size, sizeof(int), NULL);
+		send(Connection, msg1.c_str(), msg_size, NULL); //c_str() string to char, 
 		Sleep(10);
 	}
 
