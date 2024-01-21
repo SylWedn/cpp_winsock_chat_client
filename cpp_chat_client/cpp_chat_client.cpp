@@ -2,22 +2,53 @@
 #include <winsock2.h> //using 2nd version of winsock
 #include <iostream>
 #include <string>
-
-
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
 #pragma warning(disable: 4996)
 
 SOCKET Connection;
 
-void ClientHandler() {
-	int msg_size;
-	while (true) {
+enum Packet {
+	P_ChatMessage, // type of packet
+	P_Test
+
+};
+
+bool ProcessPacket(Packet packettype) {
+	switch (packettype) {
+	case P_ChatMessage:
+	{
+		int msg_size;
 		recv(Connection, (char*)&msg_size, sizeof(int), NULL);
 		char* msg = new char[msg_size + 1];
 		msg[msg_size] = '\0';
 		recv(Connection, msg, msg_size, NULL);
 		std::cout << msg << std::endl;
 		delete[] msg;
+		break;
 	}
+	case P_Test:
+		std::cout << "Test packet.\n";
+		break;
+		delete[] msg;
+		break;
+
+	default:
+		std::cout << "Unrecognized packet: " << packettype << std::endl;
+		break;
+	}
+	return true;
+}
+
+void ClientHandler() {
+	Packet packettype;
+	while (true) {
+		recv(Connection, (char*)&packettype, sizeof(Packet), NULL);
+		
+		if (!ProcessPacket(packettype)) {
+			break;
+		}
+	}
+	closesocket(Connection);
 	
 }
 
@@ -49,6 +80,8 @@ int main(int arg, char* argv[]) {  //check if lib loaded
 	std::string msg1;
 	while (true) {
 		std::getline(std::cin, msg1);
+		Packet packettype = P_ChatMessage;
+		send(Connection, (char*)&packettype, sizeof(Packet), NULL);
 		int msg_size = msg1.size();
 		send(Connection, (char*)&msg_size, sizeof(int), NULL);
 		send(Connection, msg1.c_str(), msg_size, NULL); //c_str() string to char, 
