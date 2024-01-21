@@ -5,6 +5,16 @@
 
 #pragma warning(disable: 4996)
 
+SOCKET Connection;
+
+void ClientHandler() {
+	char msg[256];
+	while (true) {
+		recv(Connection, msg, sizeof(msg), NULL);
+		std::cout << msg << std::endl;
+	}
+	
+}
 
 int main(int arg, char* argv[]) {  //check if lib loaded 
 	//WSASTARTUP
@@ -22,16 +32,21 @@ int main(int arg, char* argv[]) {  //check if lib loaded
 	addr.sin_port = htons(1111); //port 
 	addr.sin_family = AF_INET; //internet protocol AF_INET
 
-	SOCKET Connection = socket(AF_INET, SOCK_STREAM, NULL);
+	Connection = socket(AF_INET, SOCK_STREAM, NULL);
 	if (connect(Connection, (SOCKADDR*)&addr, sizeof(addr)) != 0) {
 		std::cout << "Error: Failed connect to server.\n";
 		return 1;
 	}
 	std::cout << "connected!\n";
-	char msg[256];
-	recv(Connection, msg, sizeof(msg), NULL);
-	std::cout << msg << std::endl;
 
+	CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)ClientHandler, NULL, NULL, NULL); // multithreading
+
+	char msg1[256];
+	while (true) {
+		std::cin.getline(msg1, sizeof(msg1));
+		send(Connection, msg1, sizeof(msg1), NULL);
+		Sleep(10);
+	}
 
 	system("pause");
 		return 0;
